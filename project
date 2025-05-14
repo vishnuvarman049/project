@@ -1,0 +1,92 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
+import matplotlib.pyplot as plt
+import streamlit as st
+import random
+import time
+
+# Simulated Production Data
+def generate_sample_data(num_samples=1000):
+    data = {
+        'machine_uptime': np.random.uniform(50, 100, num_samples),
+        'defect_rate': np.random.uniform(0, 0.1, num_samples),
+        'material_usage': np.random.uniform(20, 60, num_samples),
+        'yield': np.random.uniform(75, 95, num_samples)  # Target variable
+    }
+    return pd.DataFrame(data)
+
+# Preprocessing the data
+def preprocess_data(df):
+    from sklearn.preprocessing import StandardScaler
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(df.drop('yield', axis=1))
+    return pd.DataFrame(scaled_features, columns=df.columns[:-1]), df['yield']
+
+# Train the predictive model (Random Forest Regressor)
+def train_model(X_train, y_train):
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    return model
+
+# Evaluate the model
+def evaluate_model(model, X_test, y_test):
+    y_pred = model.predict(X_test)
+    mae = mean_absolute_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+    return mae, r2, y_pred, y_test
+
+# Real-time Monitoring Simulation (not used in dashboard directly)
+def simulate_real_time_monitoring():
+    while True:
+        machine_uptime = random.uniform(50, 100)
+        defect_rate = random.uniform(0, 0.1)
+        material_usage = random.uniform(20, 60)
+        print(f"Machine Uptime: {machine_uptime:.2f} % | Defect Rate: {defect_rate:.2f} % | Material Usage: {material_usage:.2f} kg")
+        time.sleep(5)
+
+# Streamlit Dashboard for visualization
+def dashboard(mae, r2, y_pred, y_test):
+    st.title("Production Yield Analysis Dashboard")
+
+    # Display metrics
+    st.subheader("Model Performance")
+    st.write(f"Mean Absolute Error: {mae:.2f}")
+    st.write(f"R² Score: {r2:.2f}")
+
+    # Visualize Prediction vs Actual Yield
+    st.subheader("Prediction vs Actual Yield")
+    fig, ax = plt.subplots()
+    ax.scatter(y_test, y_pred, alpha=0.6)
+    ax.set_xlabel('Actual Yield')
+    ax.set_ylabel('Predicted Yield')
+    ax.set_title('Prediction vs Actual Yield')
+    st.pyplot(fig)
+
+    # Real-time monitoring message
+    st.subheader("Real-Time Monitoring")
+    st.text("Machine Uptime, Defect Rate, and Material Usage are simulated here...")
+    st.write("This simulation could be extended to live updates using sensors or a data stream.")
+
+# Full Process
+def main():
+    # Generate and preprocess data
+    data = generate_sample_data()
+    X, y = preprocess_data(data)
+
+    # Train-Test Split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Train the model
+    model = train_model(X_train, y_train)
+
+    # Evaluate the model
+    mae, r2, y_pred, y_test = evaluate_model(model, X_test, y_test)
+
+    # Run the dashboard
+    dashboard(mae, r2, y_pred, y_test)
+
+if __name__ == "__main__":
+    main()
